@@ -1,6 +1,6 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/eclass/gnatbuild.eclass,v 1.55 2012/09/15 16:16:53 zmedico Exp $
+# $Header: /var/cvsroot/gentoo-x86/eclass/gnatbuild.eclass,v 1.57 2013/11/14 06:20:06 nerdboy Exp $
 #
 # Author: George Shapovalov <george@gentoo.org>
 # Belongs to: ada herd <ada@gentoo.org>
@@ -337,9 +337,16 @@ gnatbuild_src_unpack() {
 
 			cd "${S}"
 			# patching gcc sources, following the toolchain
-			if [[ -d "${FILESDIR}"/${SLOT} ]] ; then
-				EPATCH_MULTI_MSG="Applying Gentoo patches ..." \
-				epatch "${FILESDIR}"/${SLOT}/*.patch
+			# first, the common patches
+			if [[ -d "${FILESDIR}"/patches ]] && [[ ! -z $(ls "${FILESDIR}"/patches/*.patch 2>/dev/null) ]] ; then
+				EPATCH_MULTI_MSG="Applying common Gentoo patches ..." \
+				epatch "${FILESDIR}"/patches/*.patch
+			fi
+			#
+			# then per SLOT
+			if [[ -d "${FILESDIR}"/patches/${SLOT} ]] && [[ ! -z $(ls "${FILESDIR}"/patches/${SLOT}/*.patch 2>/dev/null) ]] ; then
+				EPATCH_MULTI_MSG="Applying SLOT-specific Gentoo patches ..." \
+				epatch "${FILESDIR}"/patches/${SLOT}/*.patch
 			fi
 			# Replacing obsolete head/tail with POSIX compliant ones
 			ht_fix_file */configure
@@ -478,12 +485,19 @@ gnatbuild_src_compile() {
 					confgcc="${confgcc} --disable-nls"
 				fi
 
+				if [ "${GNATMINOR}" -ge "6" ] ; then
+					confgcc+=( $(use_enable lto) )
+				elif [ "${GNATMINOR}" -ge "5" ] ; then
+					confgcc+=( --disable-lto )
+				fi
+
 				# reasonably sane globals (from toolchain)
 				# also disable mudflap and ssp
 				confgcc="${confgcc} \
 					--with-system-zlib \
 					--disable-checking \
 					--disable-werror \
+					--disable-libgomp \
 					--disable-libmudflap \
 					--disable-libssp \
 					--disable-libunwind-exceptions"
@@ -547,6 +561,11 @@ gnatbuild_src_compile() {
 				cp "${S}"/gcc/ada/xeinfo.adb   .
 				cp "${S}"/gcc/ada/xnmake.adb   .
 				cp "${S}"/gcc/ada/xutil.ad{s,b}   .
+				if [[ ${GNATMINOR} > 5 ]] ; then
+					cp "${S}"/gcc/ada/einfo.ad{s,b}  .
+					cp "${S}"/gcc/ada/csinfo.adb  .
+					cp "${S}"/gcc/ada/ceinfo.adb  .
+				fi
 				gnatmake xtreeprs && \
 				gnatmake xsinfo   && \
 				gnatmake xeinfo   && \
@@ -638,7 +657,7 @@ gnatbuild_src_install() {
 		make DESTDIR="${D}" install || die
 
 		#make a convenience info link
-		dosym ${DATAPATH}/info/gnat_ugn_unw.info ${DATAPATH}/info/gnat.info
+		dosym ${DATAPATH}/info/gnat_ugn.info ${DATAPATH}/info/gnat.info
 		;;
 
 	move_libs)
@@ -706,6 +725,14 @@ EOF
 		# remove duplicate docs
 		rm -f  "${D}${DATAPATH}"/info/{dir,gcc,cpp}*
 		rm -rf "${D}${DATAPATH}"/man/man7/
+
+		# fix .la path for lto plugin
+		if use lto ; then
+			sed -i -e \
+				"/libdir=/c\libdir='${LIBEXECPATH}'" \
+				"${D}${LIBEXECPATH}"/liblto_plugin.la \
+				|| die "sed update of .la file failed!"
+		fi
 		;;
 
 	prep_env)

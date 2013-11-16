@@ -1,6 +1,6 @@
 # Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/www-plugins/chrome-binary-plugins/chrome-binary-plugins-9999.ebuild,v 1.7 2013/03/19 23:06:23 floppym Exp $
+# $Header: /var/cvsroot/gentoo-x86/www-plugins/chrome-binary-plugins/chrome-binary-plugins-9999.ebuild,v 1.9 2013/05/02 20:00:27 floppym Exp $
 
 EAPI=4
 
@@ -12,11 +12,11 @@ SLOT="unstable"
 URI_BASE="https://dl.google.com/linux/direct/"
 URI_BASE_NAME="google-chrome-${SLOT}_current_"
 SRC_URI="" # URI is left blank on live ebuild
-RESTRICT="bindist mirror strip"
 
 LICENSE="google-chrome"
 KEYWORDS="" # KEYWORDS is also left blank on live ebuild
 IUSE="+flash +pdf"
+RESTRICT="bindist mirror strip"
 
 RDEPEND="www-client/chromium"
 
@@ -27,9 +27,7 @@ for x in 0 beta stable unstable; do
 done
 
 S="${WORKDIR}/opt/google/chrome"
-
-QA_FLAGS_IGNORED="/usr/$(get_libdir)/chromium-browser/PepperFlash/libpepflashplayer.so
-				  /usr/$(get_libdir)/chromium-browser/libpdf.so"
+QA_PREBUILT="*"
 
 src_unpack() {
 	# We have to do this inside of here, since it's a live ebuild. :-(

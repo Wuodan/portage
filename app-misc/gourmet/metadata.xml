@@ -3,7 +3,6 @@
 <pkgmetadata>
 	<maintainer>
 		<email>nixphoeni@gentoo.org</email>
-		<name>Joe Sapp</name>
 	</maintainer>
 	<longdescription>
 		Gourmet Recipe Manager is an application to store, organize
@@ -27,5 +26,7 @@
 		<flag name='rtf'>Enable export to RTF</flag>
 		<flag name='gnome-print'>Enable pretty Python printing with
 			gnome-print</flag>
+		<flag name='web'>Enable the web import plugin</flag>
+		<flag name='spell'>Enable spell checking support</flag>
 	</use>
 </pkgmetadata>
